@@ -56,11 +56,3 @@ html, body {
 #overlay {
 	pointer-events: none;
 }
-
-.application-logo {
-    position: absolute;
-    top: 12px;
-    left: 15px;
-    font-family: 'Roboto';
-    font-size: 15px;
-}

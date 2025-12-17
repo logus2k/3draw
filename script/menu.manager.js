@@ -18,10 +18,10 @@ export class MenuManager {
     constructor(config = {}) {
         this.cfg = {
             menuTargetId: config.menuTargetId || 'application-menu-container',
-            menuPosition: config.menuPosition || 'top-right',
+            menuPosition: config.menuPosition || 'bottom-center',
             iconSize: config.menuIconSize || 36,
             margin: config.menuMargin || 16,
-            panelIds: config.panelIds || ['search', 'data', 'assistant', 'about', 'settings'],
+            panelIds: config.panelIds || ['search', 'data', 'metrics', 'about', 'settings'],
             initialVisibility: config.initialVisibility || {},
         };
 
@@ -37,6 +37,8 @@ export class MenuManager {
         this.#initMenu();
         this.#initPanels();
         this.#applyInitialVisibility();
+
+        window.addEventListener('resize', () => this.#handleWindowResize());
     }
 
     // ------------------ public API ------------------
@@ -70,9 +72,9 @@ export class MenuManager {
         const items = [
             { id: 'search', icon: 'search', label: 'Search' },
             { id: 'data', icon: 'description', label: 'Data Explorer' },
-            { id: 'assistant', icon: 'smart_toy', label: 'Assistant' },
+            { id: 'metrics', icon: 'equalizer', label: 'Metrics' },
+            { id: 'settings', icon: 'settings', label: 'Settings' },
             { id: 'about', icon: 'info', label: 'About' },
-            { id: 'settings', icon: 'settings', label: 'Settings' }
         ];
 
         items.forEach(({ id, icon, label }) => {
@@ -101,26 +103,29 @@ export class MenuManager {
             const el = document.getElementById(`hud-${id}`);
             if (!el) return;
             this.panels[id] = el;
-            if (!getComputedStyle(el).position || getComputedStyle(el).position === 'static') {
-                el.style.position = 'absolute';
-            }
 
-            if (!el.querySelector('.pm-close')) {
-                const close = document.createElement('button');
+            // Ensure we always have a close button with a working listener
+            let close = el.querySelector('.pm-close');
+            if (!close) {
+                close = document.createElement('button');
                 close.className = 'pm-close';
                 close.textContent = '×';
-                close.addEventListener('click', (e) => { 
-                    e.stopPropagation(); 
-                    this.#setPanelDisplay(id, false); 
-                    this.#syncMenuBtn(id, false);
-                });
                 el.appendChild(close);
             }
+
+            // Always (re)attach the listener to ensure it works with this instance
+            close.onclick = (e) => { 
+                e.preventDefault();
+                e.stopPropagation(); 
+                this.#setPanelDisplay(id, false); 
+                this.#syncMenuBtn(id, false);
+            };
 
             this.#makeDraggable(el, id);
 
             el.addEventListener('mousedown', () => {
-                this.topZ += 1; el.style.zIndex = String(this.topZ);
+                this.topZ += 1; 
+                el.style.zIndex = String(this.topZ);
             });
         });
     }
@@ -133,33 +138,48 @@ export class MenuManager {
         }
 
         const existingMoveable = this.moveables.get(panel);
-
         if (existingMoveable) {
             existingMoveable.destroy();
             this.moveables.delete(panel);
         }
 
-        const root = document.body;
-        const cs = getComputedStyle(panel);
+        // 1. Capture the current rendered position on screen
+        const rect = panel.getBoundingClientRect();
 
-        if (!cs.position || cs.position === 'static') {
-            panel.style.position = 'absolute';
-            panel.style.transform = 'translate(0px, 0px)';
-        }
+        // 2. Normalize positioning to Top-Left
+        // This stops the 'shaking' caused by bottom/right/align-self CSS anchors
+        panel.style.top = `${rect.top}px`;
+        panel.style.left = `${rect.left}px`;
+        panel.style.bottom = 'auto';
+        panel.style.right = 'auto';
+        panel.style.margin = '0';
+        panel.style.position = 'absolute';
+        
+        // Reset transform to 0,0 since we just moved the element's actual top/left
+        panel.style.transform = 'translate(0px, 0px)';
 
         const isResizable = (id !== 'settings' && id !== 'about');
         const headerEl = panel.querySelector('h1');
 
-        const mv = new Moveable(root, {
+        const mv = new Moveable(document.body, {
             target: panel,
             draggable: true,
             resizable: isResizable,
-            origin: false
+            origin: false,
+            // NEW: Constraint properties
+            snappable: true,
+            bounds: { 
+                left: 0, 
+                top: 0, 
+                right: window.innerWidth, 
+                bottom: window.innerHeight 
+            }
         });
 
         let allowDrag = false;
-
-        const pos = this.positions.get(panel) || { x: 0, y: 0 };
+        
+        // Initialize or reset position tracker to 0,0 because we normalized the top/left above
+        const pos = { x: 0, y: 0 };
         this.positions.set(panel, pos);
 
         mv.on('dragStart', e => {
@@ -167,9 +187,7 @@ export class MenuManager {
             allowDrag = !!(headerEl && t && (t === headerEl || headerEl.contains(t)));
             if (!allowDrag) { e.stop && e.stop(); return; }
 
-            // seed draggable with the current translate so there's no initial jump
             if (e.set) e.set([pos.x, pos.y]);
-
             e.inputEvent.stopPropagation();
         })
         .on('drag', e => {
@@ -179,30 +197,29 @@ export class MenuManager {
             e.target.style.transform = `translate(${x}px, ${y}px)`;
         })
         .on('dragEnd', () => { 
-            allowDrag = false; 
+            allowDrag = false;
         })
         .on('resizeStart', e => {
-            // seed resizable’s internal drag with the *current* translate
             e.setOrigin(['%', '%']);
             if (e.dragStart) e.dragStart.set([pos.x, pos.y]);
         })
         .on('resize', e => {
             const { target, width, height, drag } = e;
-            const [bx, by] = drag.beforeTranslate;
-
+            
             target.style.width = `${width}px`;
             target.style.height = `${height}px`;
-            target.style.transform = `translate(${bx}px, ${by}px)`;
 
-            pos.x = bx; pos.y = by;
+            const [x, y] = drag.beforeTranslate;
+            target.style.transform = `translate(${x}px, ${y}px)`;
+
+            pos.x = x; 
+            pos.y = y;
         })
-        .on('resizeEnd', e => {
-            this.#applyControlStyles(mv);
+        .on('resizeEnd', () => {
             mv.updateRect();
         });
 
         this.moveables.set(panel, mv);
-
         mv.updateRect();
         this.#applyControlStyles(mv);
     }
@@ -289,4 +306,48 @@ export class MenuManager {
         const b = btns[idx];
         if (b) b.classList.toggle('active', !!active);
     }
+
+    #handleWindowResize() {
+        const newBounds = { 
+            left: 0, 
+            top: 0, 
+            right: window.innerWidth, 
+            bottom: window.innerHeight 
+        };
+
+        this.moveables.forEach((mv, panel) => {
+            // 1. Update the Moveable instance bounds
+            mv.bounds = newBounds;
+            
+            // 2. Get current position data
+            const rect = panel.getBoundingClientRect();
+            const pos = this.positions.get(panel) || { x: 0, y: 0 };
+
+            let adjustedX = pos.x;
+            let adjustedY = pos.y;
+
+            // 3. Logic to "push" the window back inside if the browser shrank
+            // Check right edge
+            if (rect.right > window.innerWidth) {
+                adjustedX -= (rect.right - window.innerWidth);
+            }
+            // Check bottom edge
+            if (rect.bottom > window.innerHeight) {
+                adjustedY -= (rect.bottom - window.innerHeight);
+            }
+            // Ensure it doesn't go past top/left (0,0)
+            if (rect.left < 0) adjustedX -= rect.left;
+            if (rect.top < 0) adjustedY -= rect.top;
+
+            // 4. Apply adjustments if needed
+            if (adjustedX !== pos.x || adjustedY !== pos.y) {
+                pos.x = adjustedX;
+                pos.y = adjustedY;
+                panel.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+            }
+
+            // 5. Refresh Moveable's internal cache
+            mv.updateRect();
+        });
+    }    
 }

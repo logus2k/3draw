@@ -54,13 +54,11 @@
 }
 
 .pm-menu button.active {
-	outline: none;
-	border: 1px solid #FFB000;
-	/* active border = orange */
-	box-shadow: 0 0 6px #FFB000;
-	/* optional orange glow */
-	color: #FFB000;
-	/* active icon = orange */
+    outline: none;
+    border: 1px solid #55cb80;
+    box-shadow: 0 0 6px #55cb80;
+    color: #1c9649;
+    background-color: #adfecb;
 }
 
 .pm-menu .material-symbols-outlined {
@@ -96,13 +94,14 @@
     border: none;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.1);
-    color: #000000;
+    color: #aaaaaa;
     cursor: pointer;
     line-height: 1;
 }
 
 .pm-close:hover {
-	background: rgb(255, 176, 0, 0.85);
+    background: #FFA2A2;
+	color: #333333;
 }
 
 /* ───────────────── Light Theme Menu ───────────────── */
@@ -111,17 +110,6 @@
 	background: rgba(255, 255, 255, 0.85);
 	color: #555;
 	border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.pm-menu button:hover {
-	background: rgba(240, 240, 240, 1);
-	color: #000;
-}
-
-.pm-menu button.active {
-	border-color: rgba(0, 0, 0, 0.35);
-	box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
-	color: #000;
 }
 
 .pm-bottom-center {
