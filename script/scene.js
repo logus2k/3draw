@@ -68,17 +68,20 @@ export class MillimetricScene {
 
     #addMillimetricGrid() {
         const size = 100;
-        // Grid Helpers are efficient because they use LineSegments
-        const grid1 = new THREE.GridHelper(size, size, 0xd8d8d8, 0xd8d8d8);
-        grid1.material.opacity = 0.25;
+        
+        // Grey for the smallest squares (most frequent grid lines)
+        const grid1 = new THREE.GridHelper(size, size, 0xd8d8d8, 0xd8d8d8); // Light grey
+        grid1.material.opacity = 0.50;
         grid1.material.transparent = true;
 
-        const grid5 = new THREE.GridHelper(size, size / 5, 0xb0b0b0, 0xb0b0b0);
-        grid5.material.opacity = 0.45;
+        // Soft blue for medium squares
+        const grid5 = new THREE.GridHelper(size, size / 5, 0xb3d1ff, 0xb3d1ff); // Light-medium blue
+        grid5.material.opacity = 0.80;
         grid5.material.transparent = true;
 
-        const grid10 = new THREE.GridHelper(size, size / 10, 0x8a8a8a, 0x8a8a8a);
-        grid10.material.opacity = 0.7;
+        // Soft blue for larger squares
+        const grid10 = new THREE.GridHelper(size, size / 10, 0x99c2ff, 0x99c2ff); // More defined soft blue
+        grid10.material.opacity = 0.90;
         grid10.material.transparent = true;
 
         this.gridSize = size;
