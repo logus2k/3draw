@@ -7,6 +7,7 @@ export class MillimetricScene {
 
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xf5f5f3); // Light theme background
+        // this.#setupGradientBackground();
 
         this.camera = new THREE.PerspectiveCamera(
             25,
@@ -108,6 +109,28 @@ export class MillimetricScene {
         
         this.controls.update();
         this.render(); // Redraw after repositioning
+    }
+
+    #setupGradientBackground() {
+        // Create canvas for gradient
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const context = canvas.getContext('2d');
+        
+        // Create vertical gradient
+        const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#fafafa');     // Very light grey at top
+        gradient.addColorStop(1, '#555556ff');     // Soft bluish grey at bottom
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        
+        // Use it as background
+        this.scene.background = texture;
     }
 
     #onResize() {
