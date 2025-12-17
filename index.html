@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Three.js Grid + HTML Overlay</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="style/style.css" />
+	<link rel="stylesheet" href="style/hud.css" />
+	<link rel="stylesheet" href="style/window.css" />
+	<link rel="stylesheet" href="style/menu.css" />
+
+	<script type="text/javascript" src="./library/moveable.min.js"></script>
+</head>
+<body>
+
+<div id="root">
+	<div id="three-layer"></div>
+	<div id="ui-layer">
+		<div id="overlay">
+
+			<div id="application-logo" class="application-logo"><b>FEM</b>ULATOR</div>
+			<div id="application-menu-container"></div>
+
+			<div class="hud moveable-window" id="settings-window">
+				<div class="hud-header">Settings</div>
+				<div class="hud-body">a sdlk alçsd fkçals dfçlfka sldfk açlskd fçlaks dflka slçdfk çals k</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<script type="module">
+	import { MillimetricScene } from './script/scene.js';
+
+	const container = document.getElementById('three-layer');
+	new MillimetricScene(container);
+</script>
+
+<script type="module" src="./script/menu.init.js"></script>
+<script type="module" src="./script/moveable.init.js"></script>
+
+</body>
+</html>
